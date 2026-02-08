@@ -63,7 +63,10 @@ async function refreshAccessToken() {
     refreshPromise = (async () => {
       const res = await fetch(joinUrl(API_BASE, "/api/v1/auth/refresh"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
         body: JSON.stringify({ refresh }),
       });
 
@@ -93,6 +96,9 @@ export async function apiFetch(
   { method = "GET", body, rawBody, auth = true, retryOnAuth = true, headers: customHeaders } = {}
 ) {
   const headers = customHeaders ?? { "Content-Type": "application/json" };
+
+  // Skip ngrok's browser interstitial for API calls
+  headers["ngrok-skip-browser-warning"] = "true";
 
   if (auth) {
     const t = getToken();
