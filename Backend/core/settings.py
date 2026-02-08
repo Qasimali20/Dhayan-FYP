@@ -20,11 +20,11 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", DJANGO_DEFAULT_SECRET_KEY)
 
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
 
-ALLOWED_HOSTS = [
-    h.strip()
-    for h in os.getenv("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
-    if h.strip()
-]
+_raw_hosts = os.getenv(
+    "DJANGO_ALLOWED_HOSTS",
+    "localhost,127.0.0.1,.ngrok-free.app,.ngrok.io,.vercel.app",
+)
+ALLOWED_HOSTS = [h.strip() for h in _raw_hosts.split(",") if h.strip()]
 
 # -----------------------------------------------------------------------------
 # Applications
@@ -177,13 +177,29 @@ SIMPLE_JWT = {
 # -----------------------------------------------------------------------------
 # CORS (frontend/mobile)
 # -----------------------------------------------------------------------------
-# Updated to include Vite's default port (5173)
-CORS_ALLOWED_ORIGINS = [
+# When using ngrok (dynamic URLs), set CORS_ALLOW_ALL=1 in .env
+if os.getenv("CORS_ALLOW_ALL", "0") == "1":
+    CORS_ALLOW_ALL_ORIGINS = True
+else:
+    CORS_ALLOWED_ORIGINS = [
+        o.strip()
+        for o in os.getenv(
+            "CORS_ALLOWED_ORIGINS",
+            "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174",
+        ).split(",")
+        if o.strip()
+    ]
+CORS_ALLOW_CREDENTIALS = True
+
+# Trusted origins for CSRF (needed for ngrok / Vercel)
+CSRF_TRUSTED_ORIGINS = [
     o.strip()
-    for o in os.getenv("CORS_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+    for o in os.getenv(
+        "CSRF_TRUSTED_ORIGINS",
+        "https://*.ngrok-free.app,https://*.ngrok.io,https://*.vercel.app",
+    ).split(",")
     if o.strip()
 ]
-CORS_ALLOW_CREDENTIALS = True
 
 # -----------------------------------------------------------------------------
 # Email (console backend for development)
