@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: dhyan
+      POSTGRES_USER: dhyan
+      POSTGRES_PASSWORD: dhyan
+    ports:
+      - "5432:5432"
+    volumes:
+      - dhyan_pg:/var/lib/postgresql/data
+
+  api:
+    build: .
+    env_file: .env.docker
+    depends_on:
+      - db
+    ports:
+      - "8000:8000"
+
+volumes:
+  dhyan_pg:

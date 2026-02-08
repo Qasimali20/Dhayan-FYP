@@ -1,0 +1,415 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Look Where I Point - Joint Attention</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 18px; }
+    .row { display: flex; gap: 14px; margin-top: 12px; flex-wrap: wrap; }
+    .card {
+      width: 220px; height: 140px;
+      border: 2px solid #ddd; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; user-select: none;
+      font-size: 22px;
+      transition: opacity 0.1s ease;
+      background: #fff;
+    }
+    .highlight { border-color: #222; box-shadow: 0 0 0 3px #222; }
+    .top { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+    input, button { padding: 10px; }
+    .prompt { margin-top: 12px; font-size: 22px; }
+    .status { margin-top: 10px; display:flex; align-items:center; gap:8px; }
+    .small { font-size: 12px; color:#666; }
+
+    .summaryBox{
+      margin-top: 16px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      background: #fafafa;
+      display:none;
+      max-width: 720px;
+    }
+    .summaryBox h3{ margin:0 0 8px 0; }
+    .summaryGrid{
+      display:grid;
+      grid-template-columns: 180px 1fr;
+      row-gap: 6px;
+      column-gap: 10px;
+      font-size: 14px;
+    }
+    .muted{ color:#666; }
+    button:disabled{ opacity:0.55; cursor:not-allowed; }
+  </style>
+</head>
+<body>
+  <h2>Game: Look Where I Point (Joint Attention)</h2>
+
+  <div class="top">
+    <button onclick="logout()">Logout</button>
+    <input id="childId" placeholder="ChildProfile ID" style="width:160px;" />
+    <button id="btnStart" onclick="startSession()">Start Session</button>
+    <button id="btnNext" onclick="nextTrial()">Next Trial</button>
+    <button id="btnSummary" onclick="loadSummary()">Summary</button>
+  </div>
+
+  <div class="prompt" id="prompt">Enter child id and press Start Session…</div>
+  <div class="small" id="meta"></div>
+
+  <div class="row" id="options"></div>
+
+  <div class="status" id="status"></div>
+
+  <div class="summaryBox" id="summaryBox">
+    <h3>Session Summary</h3>
+    <div class="small" id="lastTrialLine" style="margin:6px 0 10px 0; display:none;"></div>
+    <div class="summaryGrid" id="summaryGrid"></div>
+    <div class="small muted" style="margin-top:10px;">
+      Tip: Start a new session to play again.
+    </div>
+  </div>
+
+<script>
+/**
+ * ✅ SINGLE SOURCE OF TRUTH for API base
+ * Core mounts therapy at: /api/v1/therapy/
+ * Game is mounted at: /api/v1/therapy/games/ja/
+ */
+const API_BASE = "/api/v1/therapy/games/ja";
+const UI_LOGIN_URL = "/api/v1/therapy/games/ja/ui/login/";
+
+let sessionId = null;
+let trialId = null;
+let trialStart = null;
+let timeLimitMs = 10000;
+let target = null;
+
+let submitting = false;
+let submittedTrials = new Set();
+let sessionCompleted = false;
+
+function token() { return localStorage.getItem("dhyan_jwt") || ""; }
+
+function ensureTokenOrRedirect() {
+  if (!token()) {
+    alert("No token found. Please login again.");
+    window.location.href = UI_LOGIN_URL;
+    return false;
+  }
+  return true;
+}
+
+function authHeaders() {
+  return { "Authorization": "Bearer " + token(), "Content-Type": "application/json" };
+}
+
+function logout() {
+  localStorage.removeItem("dhyan_jwt");
+  window.location.href = UI_LOGIN_URL;
+}
+
+async function safeJson(res) { try { return await res.json(); } catch { return {}; } }
+
+function setStatus(msg) { document.getElementById("status").textContent = msg || ""; }
+
+function setPrompt(msg) { document.getElementById("prompt").textContent = msg || "—"; }
+
+function setMeta(msg) { document.getElementById("meta").textContent = msg || ""; }
+
+function clearBoard() {
+  document.getElementById("options").innerHTML = "";
+  setPrompt("—");
+  setMeta("");
+}
+
+function disableCards() {
+  document.querySelectorAll(".card").forEach(el => {
+    el.style.pointerEvents = "none";
+    el.style.opacity = "0.75";
+  });
+}
+
+function enableCards() {
+  document.querySelectorAll(".card").forEach(el => {
+    el.style.pointerEvents = "auto";
+    el.style.opacity = "1";
+  });
+}
+
+function setButtons({ startDisabled, nextDisabled, summaryDisabled }) {
+  document.getElementById("btnStart").disabled = !!startDisabled;
+  document.getElementById("btnNext").disabled = !!nextDisabled;
+  document.getElementById("btnSummary").disabled = !!summaryDisabled;
+}
+
+function hideSummary() {
+  document.getElementById("summaryBox").style.display = "none";
+  document.getElementById("summaryGrid").innerHTML = "";
+  const last = document.getElementById("lastTrialLine");
+  last.style.display = "none";
+  last.textContent = "";
+}
+
+function showSummary(data, lastTrialText=null) {
+  const grid = document.getElementById("summaryGrid");
+  const rows = [
+    ["Session ID", data.session_id],
+    ["Status", data.status],
+    ["Total Trials", data.total_trials],
+    ["Completed Trials", data.completed_trials],
+    ["Correct", data.correct],
+    ["Accuracy", data.accuracy],
+    ["Avg Response Time (ms)", data.avg_response_time_ms ?? "—"],
+    ["Current Level", data.current_level],
+    ["Suggestion", data.suggestion || "—"],
+  ];
+  grid.innerHTML = rows.map(([k,v]) =>
+    `<div class="muted">${k}</div><div><b>${String(v)}</b></div>`
+  ).join("");
+
+  const last = document.getElementById("lastTrialLine");
+  if (lastTrialText) {
+    last.style.display = "block";
+    last.textContent = "Last Trial: " + lastTrialText;
+  } else {
+    last.style.display = "none";
+    last.textContent = "";
+  }
+
+  document.getElementById("summaryBox").style.display = "block";
+}
+
+function resetForNewSessionUI() {
+  submittedTrials = new Set();
+  submitting = false;
+  sessionCompleted = false;
+  trialId = null;
+  target = null;
+  hideSummary();
+  clearBoard();
+  setStatus("");
+  setButtons({ startDisabled: true, nextDisabled: true, summaryDisabled: false });
+}
+
+async function startSession() {
+  if (!ensureTokenOrRedirect()) return;
+
+  const childIdRaw = document.getElementById("childId").value.trim();
+  const childId = parseInt(childIdRaw, 10);
+  if (!childId) { alert("Enter valid ChildProfile ID"); return; }
+
+  setStatus("Starting session...");
+  setPrompt("Starting…");
+  setMeta("");
+  hideSummary();
+
+  setButtons({ startDisabled: true, nextDisabled: true, summaryDisabled: true });
+
+  const res = await fetch(`${API_BASE}/start/`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({ child_id: childId, trials_planned: 10 })
+  });
+
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    const detail = data.detail || JSON.stringify(data);
+    setStatus("Start failed: " + detail);
+    alert("Start failed: " + detail);
+    setButtons({ startDisabled: false, nextDisabled: true, summaryDisabled: false });
+    setPrompt("Enter child id and press Start Session…");
+    return;
+  }
+
+  sessionId = data.session_id;
+  timeLimitMs = data.time_limit_ms || 10000;
+
+  resetForNewSessionUI();
+
+  setStatus("✅ Session started: " + sessionId);
+
+  // ✅ Auto-load first trial (no need to press Next)
+  await nextTrial();
+}
+
+async function nextTrial() {
+  if (!ensureTokenOrRedirect()) return;
+  if (!sessionId) { alert("Start session first"); return; }
+  if (sessionCompleted) return;
+
+  setStatus("Loading next trial...");
+  setButtons({ startDisabled: true, nextDisabled: true, summaryDisabled: false });
+
+  const res = await fetch(`${API_BASE}/${sessionId}/next/`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({})
+  });
+
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    const detail = data.detail || JSON.stringify(data);
+    setStatus("Next failed: " + detail);
+    alert("Next failed: " + detail);
+    setButtons({ startDisabled: false, nextDisabled: true, summaryDisabled: false });
+    return;
+  }
+
+  if (data.detail && String(data.detail).toLowerCase().includes("no more")) {
+    setStatus("No more trials. Showing summary...");
+    await loadSummary();
+    return;
+  }
+
+  trialId = data.trial_id;
+  trialStart = performance.now();
+  target = data.target;
+  timeLimitMs = data.time_limit_ms || 10000;
+
+  submitting = false;
+  enableCards();
+
+  setPrompt(data.prompt || "—");
+  setMeta(`Level ${data.level} | Trial ${trialId} | Time limit ${timeLimitMs}ms`);
+
+  renderOptions(data.options || [], data.highlight || null);
+
+  setStatus("Trial running...");
+  setButtons({ startDisabled: true, nextDisabled: false, summaryDisabled: false });
+}
+
+function renderOptions(options, highlight) {
+  const container = document.getElementById("options");
+  container.innerHTML = "";
+
+  if (!options.length) {
+    container.innerHTML = "<div class='small'>No options returned</div>";
+    return;
+  }
+
+  options.forEach(opt => {
+    const div = document.createElement("div");
+    div.className = "card" + ((highlight && opt === highlight) ? " highlight" : "");
+    div.textContent = opt;
+
+    div.onclick = () => {
+      if (submitting || sessionCompleted) return;
+      submit(opt);
+    };
+
+    container.appendChild(div);
+  });
+}
+
+async function submit(clicked) {
+  if (!ensureTokenOrRedirect()) return;
+  if (!trialId || sessionCompleted) return;
+
+  if (submitting) return;
+  if (submittedTrials.has(trialId)) return;
+
+  submitting = true;
+  submittedTrials.add(trialId);
+  disableCards();
+  setButtons({ startDisabled: true, nextDisabled: true, summaryDisabled: false });
+
+  const rt = Math.floor(performance.now() - trialStart);
+  const timedOut = rt > timeLimitMs;
+
+  setStatus("Submitting...");
+
+  const res = await fetch(`${API_BASE}/trial/${trialId}/submit/`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify({
+      clicked: clicked,
+      response_time_ms: rt,
+      timed_out: timedOut
+    })
+  });
+
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    const detail = data.detail || JSON.stringify(data);
+    const msg = String(detail || "");
+
+    if (msg.includes("running state") || msg.includes("completed")) {
+      setStatus("Already submitted. Moving on...");
+      submitting = false;
+      await nextTrial();
+      return;
+    }
+
+    setStatus("Submit failed: " + detail);
+    alert("Submit failed: " + detail);
+    submitting = false;
+    enableCards();
+    setButtons({ startDisabled: true, nextDisabled: false, summaryDisabled: false });
+    return;
+  }
+
+  // ✅ Build last trial line
+  const ok = data.success ? "✅ Correct" : "❌ Wrong";
+  const lastTrialText = `${ok} | RT=${rt}ms | Clicked=${clicked} | Target=${target}`;
+
+  submitting = false;
+
+  // ✅ If backend returns session_completed -> finalize UI cleanly
+  if (data.session_completed) {
+    sessionCompleted = true;
+
+    // Clear game UI completely
+    clearBoard();
+    disableCards();
+    setButtons({ startDisabled: false, nextDisabled: true, summaryDisabled: false });
+
+    // ✅ ONLY ONE status line (no duplicate "Correct..." here)
+    // setStatus("✅ Session completed. Summary below.");
+
+    // Show summary panel
+    if (data.summary) {
+      showSummary(data.summary, lastTrialText);
+    } else {
+      await loadSummary();
+    }
+    return;
+  }
+
+  // Not completed: show feedback briefly then auto-next
+  setStatus(lastTrialText);
+  setTimeout(() => nextTrial(), 350);
+}
+
+async function loadSummary() {
+  if (!ensureTokenOrRedirect()) return;
+  if (!sessionId) return;
+
+  const res = await fetch(`${API_BASE}/${sessionId}/summary/`, {
+    method: "GET",
+    headers: authHeaders(),
+  });
+
+  const data = await safeJson(res);
+
+  if (!res.ok) {
+    const detail = data.detail || JSON.stringify(data);
+    alert("Summary failed: " + detail);
+    return;
+  }
+
+  // if summary fetched manually, no last-trial line available
+  showSummary(data, null);
+}
+
+// Redirect to login if no token
+window.addEventListener("load", () => {
+  if (!token()) window.location.href = UI_LOGIN_URL;
+  setButtons({ startDisabled: false, nextDisabled: true, summaryDisabled: false });
+});
+</script>
+</body>
+</html>

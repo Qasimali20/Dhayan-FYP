@@ -1,0 +1,43 @@
+# ─── Python ─────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+.venv/
+env/
+venv/
+
+# ─── Environment / secrets ──────────────────────────
+.env
+*.env
+!.env.example
+
+# ─── Django ─────────────────────────────────────────
+*.sqlite3
+db.sqlite3
+Backend/media/
+Backend/staticfiles/
+
+# ─── Node / Frontend ────────────────────────────────
+node_modules/
+frontend/dist/
+frontend/dist-ssr/
+
+# ─── IDE ────────────────────────────────────────────
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# ─── OS ─────────────────────────────────────────────
+*.log
+*.tmp
+*.bak

@@ -1,0 +1,59 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>DHYAN - Game Login</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    input, button { padding: 10px; width: 380px; margin: 6px 0; }
+    .box { max-width: 460px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>DHYAN — Login (JWT)</h2>
+    <p>Enter therapist credentials (email + password) to get a token.</p>
+
+    <input id="email" placeholder="Email" />
+    <input id="password" placeholder="Password" type="password" />
+    <button onclick="login()">Get Token</button>
+
+    <p><b>Access Token</b></p>
+    <textarea id="token" style="width: 420px; height: 120px;"></textarea>
+
+    <button onclick="saveToken()">Save Token & Go to Game</button>
+
+    <p id="msg"></p>
+  </div>
+
+<script>
+async function login() {
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const msg = document.getElementById("msg");
+  msg.textContent = "Logging in...";
+
+  const res = await fetch("/api/v1/auth/login", {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ email, password })
+  });
+
+  const data = await res.json();
+  if (!res.ok) {
+    msg.textContent = "Login failed: " + (data.detail || JSON.stringify(data));
+    return;
+  }
+  document.getElementById("token").value = data.access;
+  msg.textContent = "Token acquired.";
+}
+
+function saveToken() {
+  const token = document.getElementById("token").value.trim();
+  if (!token) { alert("No token"); return; }
+  localStorage.setItem("dhyan_jwt", token);
+  window.location.href = "/api/v1/therapy/games/ja/ui/";
+}
+</script>
+</body>
+</html>
