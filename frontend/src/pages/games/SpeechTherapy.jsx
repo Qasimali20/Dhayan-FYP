@@ -341,7 +341,7 @@ export default function SpeechTherapy() {
               🔄 Reset
             </button>
           )}
-          <button className="btn" onClick={() => nav("/games")}>
+          <button className="btn" onClick={() => nav("/dashboard")}>
             ← Back
           </button>
         </div>

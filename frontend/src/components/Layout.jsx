@@ -5,6 +5,7 @@ const NAV_ITEMS = [
   { to: "/dashboard", label: "📊 Dashboard" },
   { to: "/therapist", label: "👨‍⚕️ Console" },
   { to: "/games", label: "🎮 Games" },
+  { to: "/speech-therapy", label: "🗣️ Speech Therapy" },
 ];
 
 export default function Layout({ children }) {

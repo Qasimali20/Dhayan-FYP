@@ -24,6 +24,16 @@ const GAMES = [
     skills: ["Visual Discrimination", "Matching", "Pattern Recognition"],
   },
   {
+    code: "memory_match",
+    path: "/games/memory-match",
+    name: "Memory Match",
+    icon: "🃏",
+    description: "Flip cards and find matching pairs! Builds visual memory, concentration, and recall skills.",
+    color: "rgba(236, 72, 153, 0.25)",
+    border: "rgba(236, 72, 153, 0.4)",
+    skills: ["Visual Memory", "Concentration", "Pattern Recall"],
+  },
+  {
     code: "object_discovery",
     path: "/games/object-discovery",
     name: "Object Discovery",
@@ -42,16 +52,6 @@ const GAMES = [
     color: "rgba(239, 68, 68, 0.25)",
     border: "rgba(239, 68, 68, 0.4)",
     skills: ["Pattern Logic", "Sequencing", "Executive Function"],
-  },
-  {
-    code: "speech_therapy",
-    path: "/games/speech-therapy",
-    name: "Speech Therapy",
-    icon: "🗣️",
-    description: "Record and analyze speech activities with AI-assisted feedback. Practice articulation, fluency, and language.",
-    color: "rgba(139, 92, 246, 0.25)",
-    border: "rgba(139, 92, 246, 0.4)",
-    skills: ["Articulation", "Fluency", "Expressive Language"],
   },
 ];
 

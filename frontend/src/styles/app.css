@@ -436,3 +436,55 @@ textarea.input { resize: vertical; min-height: 60px; }
   margin: 0 8px;
   color: var(--border);
 }
+
+/* ── Memory Match Cards ── */
+.memory-card {
+  width: 90px;
+  height: 90px;
+  perspective: 600px;
+  cursor: pointer;
+}
+.memory-card-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.45s ease;
+  border-radius: 14px;
+}
+.memory-card.flipped .memory-card-inner,
+.memory-card.matched .memory-card-inner {
+  transform: rotateY(180deg);
+}
+.memory-card-front,
+.memory-card-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: 700;
+  border: 2px solid var(--border);
+}
+.memory-card-front {
+  background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(139,92,246,0.25));
+}
+.memory-card-back {
+  background: rgba(15, 23, 42, 0.9);
+  transform: rotateY(180deg);
+  border-color: rgba(99,102,241,0.5);
+}
+.memory-card.matched .memory-card-back {
+  border-color: var(--success);
+  background: rgba(16,185,129,0.15);
+}
+.memory-card:not(.flipped):not(.matched):hover .memory-card-inner {
+  transform: scale(1.06);
+}
+@media (max-width: 480px) {
+  .memory-card { width: 72px; height: 72px; }
+  .memory-card-front, .memory-card-back { font-size: 28px; }
+}
