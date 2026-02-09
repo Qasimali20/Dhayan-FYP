@@ -203,8 +203,14 @@ class SessionHistoryView(APIView):
         if is_admin:
             sessions = TherapySession.objects.select_related("child__user", "therapist").order_by("-created_at")
         else:
-            sessions = TherapySession.objects.select_related("child__user", "therapist").filter(
+            # Only sessions for children assigned to this therapist
+            from patients.models import TherapistChildAssignment
+            assigned_child_user_ids = TherapistChildAssignment.objects.filter(
                 therapist=user
+            ).values_list("child_user_id", flat=True)
+            sessions = TherapySession.objects.select_related("child__user", "therapist").filter(
+                therapist=user,
+                child__user_id__in=assigned_child_user_ids,
             ).order_by("-created_at")
 
         # Hide orphaned sessions (in_progress with zero completed trials)

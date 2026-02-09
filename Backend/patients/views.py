@@ -84,11 +84,17 @@ class ChildDetailView(APIView):
         profile = self.get_object(child_id)
         self.check_object_permissions(request, profile)
 
-        # Remove therapist assignment, then delete profile + user
-        TherapistChildAssignment.objects.filter(child_user=profile.user).delete()
+        from django.db import transaction
+        from therapy.models import TherapySession
+
         user = profile.user
-        profile.delete()
-        user.delete()
+
+        with transaction.atomic():
+            # Delete records that use PROTECT FK first
+            TherapySession.objects.filter(child=profile).delete()   # trials cascade
+            TherapistChildAssignment.objects.filter(child_user=user).delete()
+            profile.delete()   # guardians, consents, etc. cascade
+            user.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
