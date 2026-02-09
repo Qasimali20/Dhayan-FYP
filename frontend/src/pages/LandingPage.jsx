@@ -92,7 +92,7 @@ export default function LandingPage() {
               <button className="btn" onClick={() => navigate("/login")}>
                 Sign In
               </button>
-              <button className="btn btnPrimary" onClick={() => navigate("/signup")}>
+              <button className="btn btnPrimary" onClick={() => navigate("/login")}>
                 Get Started
               </button>
             </>
@@ -181,7 +181,7 @@ export default function LandingPage() {
             <button
               className="btn btnPrimary btn-lg"
               style={{ fontSize: 17, padding: "16px 36px" }}
-              onClick={() => navigate(user ? "/dashboard" : "/signup")}
+              onClick={() => navigate(user ? "/dashboard" : "/login")}
             >
               {user ? "Go to Dashboard" : "Get Started Free"} →
             </button>
@@ -434,9 +434,9 @@ export default function LandingPage() {
           <button
             className="btn btnPrimary btn-lg"
             style={{ fontSize: 17, padding: "16px 40px" }}
-            onClick={() => navigate(user ? "/dashboard" : "/signup")}
+            onClick={() => navigate(user ? "/dashboard" : "/login")}
           >
-            {user ? "Go to Dashboard →" : "Create Free Account →"}
+            {user ? "Go to Dashboard →" : "Get Started →"}
           </button>
         </div>
       </section>

@@ -17,7 +17,7 @@ export default function Layout({ children }) {
 
   const handleLogout = () => {
     logout();
-    navigate("/login");
+    navigate("/");
   };
 
   const roles = user?.roles || [];
