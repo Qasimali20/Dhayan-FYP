@@ -66,13 +66,13 @@ export default function GameRouter() {
         <div>
           <div className="h1">🎮 Therapy Games</div>
           <div className="sub">
-            Select a child below, then choose a game. The child stays selected across all games.
+            Select a child below, then choose a game to begin a session.
           </div>
         </div>
       </div>
 
       {/* Global Child Selector */}
-      <div className="panel" style={{ marginBottom: 20, padding: "12px 16px" }}>
+      <div className="panel" style={{ marginBottom: 20, padding: "14px 18px" }}>
         <ChildSelector />
       </div>
 
@@ -92,8 +92,8 @@ export default function GameRouter() {
                 <span key={s} className="skill-tag">{s}</span>
               ))}
             </div>
-            <button className="btn btnPrimary" style={{ marginTop: 12, width: "100%" }}>
-              ▶ Start Game
+            <button className="btn btnPrimary" style={{ marginTop: "auto", width: "100%", paddingTop: 10, paddingBottom: 10 }}>
+              ▶ Play
             </button>
           </div>
         ))}

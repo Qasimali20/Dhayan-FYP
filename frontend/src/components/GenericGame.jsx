@@ -140,14 +140,14 @@ export default function GenericGame({
         if (res.session_completed && res.summary) {
           setSummary(res.summary);
           setTrial(null);
-          setStatus("Session complete! 🎉");
+          setStatus("Session complete!");
         } else if (sessionId) {
           try {
             const next = await nextGameTrial(gameCode, sessionId);
             if (next.detail) {
               if (next.summary) setSummary(next.summary);
               setTrial(null);
-              setStatus("Session complete! 🎉");
+              setStatus("Session complete!");
             } else {
               setTrial(normalizeTrial(next));
               setStatus("Playing...");
@@ -209,7 +209,7 @@ export default function GenericGame({
           </button>
           {sessionId && (
             <button className="btn" onClick={handleReset}>
-              🔄 Reset
+              Reset
             </button>
           )}
           <button className="btn" onClick={() => navigate("/games")}>
@@ -219,23 +219,32 @@ export default function GenericGame({
       </div>
 
       {error && (
-        <div style={{ color: "#f87171", fontSize: 14, marginBottom: 12 }}>{error}</div>
+        <div className="alert alert-error" style={{ marginBottom: 12 }}>{error}</div>
       )}
 
       {/* Start Session */}
       {!sessionId && (
-        <div className="panel" style={{ marginBottom: 20, textAlign: "center" }}>
+        <div className="panel" style={{ marginBottom: 20, textAlign: "center", padding: 32 }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>{gameIcon}</div>
+          <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 6 }}>Ready to play {gameName}?</div>
+          <div style={{ color: "var(--muted)", fontSize: 13, marginBottom: 20 }}>
+            {selectedChild ? "Press start when you're ready!" : "Select a child on the Games page first"}
+          </div>
           <button
-            className="btn btnPrimary"
+            className="btn btnPrimary btn-lg"
             onClick={handleStart}
             disabled={loading || !selectedChild}
-            style={{ minWidth: 200, padding: "12px 24px", fontSize: 16 }}
+            style={{ minWidth: 200, fontSize: 16 }}
           >
-            {loading ? "Starting..." : "▶ Start Session"}
+            {loading ? (
+              <><span className="spinner" style={{ width: 18, height: 18, marginRight: 8 }}></span> Starting...</>
+            ) : (
+              "▶ Start Session"
+            )}
           </button>
           {!selectedChild && (
-            <div style={{ color: "#f59e0b", fontSize: 13, marginTop: 8 }}>
-              ⚠️ Select a child on the Games page first
+            <div style={{ color: "#f59e0b", fontSize: 13, marginTop: 10 }}>
+              Select a child on the Games page first
             </div>
           )}
         </div>
@@ -273,7 +282,7 @@ export default function GenericGame({
             )}
             {trial.ai_hint && (
               <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 6 }}>
-                💡 {trial.ai_hint}
+                💡 Hint: {trial.ai_hint}
               </div>
             )}
           </div>

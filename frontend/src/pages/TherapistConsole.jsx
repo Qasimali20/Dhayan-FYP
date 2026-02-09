@@ -2,9 +2,13 @@ import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
 import { listChildren, createChild } from "../api/patients";
 import { getSessionHistory, getChildProgress } from "../api/games";
+import { SkeletonStatCards, SkeletonTable } from "../components/Skeleton";
+import ProgressRing from "../components/ProgressRing";
+import { useToast } from "../hooks/useToast";
 
 export default function TherapistConsole() {
   const { user } = useAuth();
+  const toast = useToast();
 
   const [children, setChildren] = useState([]);
   const [sessions, setSessions] = useState([]);
@@ -61,9 +65,12 @@ export default function TherapistConsole() {
       await createChild(newChild);
       setShowAddChild(false);
       setNewChild({ email: "", full_name: "", date_of_birth: "", gender: "unknown", diagnosis_notes: "" });
+      toast.success("Child added successfully!");
       loadData();
     } catch (err) {
-      setAddError(err.message || "Failed to add child");
+      const msg = err.message || "Failed to add child";
+      setAddError(msg);
+      toast.error(msg);
     } finally {
       setAddLoading(false);
     }
@@ -78,14 +85,20 @@ export default function TherapistConsole() {
   });
 
   if (loading) {
-    return <div className="container"><div className="h1">Loading Console...</div></div>;
+    return (
+      <div className="container">
+        <div className="header"><div><div className="h1">Therapist Console</div><div className="sub">Loading data...</div></div></div>
+        <SkeletonStatCards count={3} />
+        <div style={{ marginTop: 16 }}><SkeletonTable rows={5} cols={6} /></div>
+      </div>
+    );
   }
 
   return (
     <div className="container">
       <div className="header">
         <div>
-          <div className="h1">👨‍⚕️ Therapist Console</div>
+          <div className="h1">Therapist Console</div>
           <div className="sub">Manage patients, review sessions, track progress</div>
         </div>
         <button className="btn btnPrimary" onClick={() => setShowAddChild(!showAddChild)}>
@@ -99,47 +112,61 @@ export default function TherapistConsole() {
           <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>Add New Child</h3>
           <form onSubmit={handleAddChild} className="form-stack">
             <div className="form-row">
-              <input
-                className="input full"
-                placeholder="Child's email"
-                value={newChild.email}
-                onChange={(e) => setNewChild({ ...newChild, email: e.target.value })}
-                required
-              />
-              <input
-                className="input full"
-                placeholder="Full name"
-                value={newChild.full_name}
-                onChange={(e) => setNewChild({ ...newChild, full_name: e.target.value })}
-              />
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Email</label>
+                <input
+                  className="input full"
+                  placeholder="child@example.com"
+                  value={newChild.email}
+                  onChange={(e) => setNewChild({ ...newChild, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Full Name</label>
+                <input
+                  className="input full"
+                  placeholder="Child's full name"
+                  value={newChild.full_name}
+                  onChange={(e) => setNewChild({ ...newChild, full_name: e.target.value })}
+                />
+              </div>
             </div>
             <div className="form-row">
-              <input
-                className="input full"
-                type="date"
-                placeholder="Date of birth"
-                value={newChild.date_of_birth}
-                onChange={(e) => setNewChild({ ...newChild, date_of_birth: e.target.value })}
-              />
-              <select
-                className="input full"
-                value={newChild.gender}
-                onChange={(e) => setNewChild({ ...newChild, gender: e.target.value })}
-              >
-                <option value="unknown">Gender</option>
-                <option value="male">Male</option>
-                <option value="female">Female</option>
-                <option value="other">Other</option>
-              </select>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Date of Birth</label>
+                <input
+                  className="input full"
+                  type="date"
+                  value={newChild.date_of_birth}
+                  onChange={(e) => setNewChild({ ...newChild, date_of_birth: e.target.value })}
+                />
+              </div>
+              <div className="form-group" style={{ flex: 1 }}>
+                <label className="form-label">Gender</label>
+                <select
+                  className="input full"
+                  value={newChild.gender}
+                  onChange={(e) => setNewChild({ ...newChild, gender: e.target.value })}
+                >
+                  <option value="unknown">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
             </div>
-            <textarea
-              className="input full"
-              placeholder="Diagnosis notes (optional)"
-              value={newChild.diagnosis_notes}
-              onChange={(e) => setNewChild({ ...newChild, diagnosis_notes: e.target.value })}
-              rows={3}
-            />
-            {addError && <div style={{ color: "#f87171", fontSize: 14 }}>{addError}</div>}
+            <div className="form-group">
+              <label className="form-label">Diagnosis Notes</label>
+              <textarea
+                className="input full"
+                placeholder="Optional clinical observations..."
+                value={newChild.diagnosis_notes}
+                onChange={(e) => setNewChild({ ...newChild, diagnosis_notes: e.target.value })}
+                rows={3}
+              />
+            </div>
+            {addError && <div className="alert alert-error">{addError}</div>}
             <button className="btn btnPrimary" disabled={addLoading}>
               {addLoading ? "Adding..." : "Add Child"}
             </button>
@@ -149,9 +176,14 @@ export default function TherapistConsole() {
 
       {/* Children List */}
       <div className="panel" style={{ marginBottom: 20 }}>
-        <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>👶 Children ({children.length})</h3>
+        <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>Children ({children.length})</h3>
         {children.length === 0 ? (
-          <p className="sub">No children assigned yet. Add a child to get started.</p>
+          <div className="empty-state">
+            <div className="empty-state-icon" style={{ fontSize: 36, opacity: 0.4 }}>👶</div>
+            <div className="empty-state-title">No Children Yet</div>
+            <div className="empty-state-desc">Add a child to start tracking their therapy progress.</div>
+            <button className="btn btnPrimary" onClick={() => setShowAddChild(true)}>➕ Add Child</button>
+          </div>
         ) : (
           <div className="children-grid">
             {children.map((c) => (
@@ -160,7 +192,9 @@ export default function TherapistConsole() {
                 className={`child-card ${selectedChild === c.id ? "child-card-active" : ""}`}
                 onClick={() => setSelectedChild(selectedChild === c.id ? null : c.id)}
               >
-                <div className="child-avatar">👶</div>
+                <div className="child-avatar" style={{ fontSize: 16, fontWeight: 800, color: 'var(--primary-light)' }}>
+                  {(c.full_name || c.email || '?').charAt(0).toUpperCase()}
+                </div>
                 <div className="child-info">
                   <div className="child-name">{c.full_name || c.email}</div>
                   <div className="child-meta">
@@ -181,7 +215,7 @@ export default function TherapistConsole() {
       {childProgress && (
         <div className="panel" style={{ marginBottom: 20 }}>
           <h3 style={{ margin: "0 0 12px 0", fontSize: 16 }}>
-            📈 Progress: {childProgress.child_name}
+                        📊 Progress: {childProgress.child_name}
           </h3>
           <div className="stats-grid">
             <div className="stat-card">
@@ -196,9 +230,14 @@ export default function TherapistConsole() {
               <div className="stat-value">{childProgress.total_trials}</div>
               <div className="stat-label">Trials</div>
             </div>
-            <div className="stat-card">
-              <div className="stat-value">{(childProgress.overall_accuracy * 100).toFixed(1)}%</div>
-              <div className="stat-label">Accuracy</div>
+            <div className="stat-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+              <ProgressRing
+                value={Math.round(childProgress.overall_accuracy * 100)}
+                size={64}
+                strokeWidth={6}
+                color={childProgress.overall_accuracy >= 0.8 ? "#10b981" : childProgress.overall_accuracy >= 0.5 ? "#f59e0b" : "#ef4444"}
+              />
+              <div className="stat-label" style={{ marginTop: 6 }}>Accuracy</div>
             </div>
           </div>
 
@@ -259,7 +298,7 @@ export default function TherapistConsole() {
       {/* Session History with Filters */}
       <div className="panel">
         <div className="row" style={{ justifyContent: "space-between", marginBottom: 12 }}>
-          <h3 style={{ margin: 0, fontSize: 16 }}>📋 Session History</h3>
+          <h3 style={{ margin: 0, fontSize: 16 }}>Session History</h3>
           <div className="row">
             <select className="input" style={{ minWidth: 120 }} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
               <option value="">All Status</option>
@@ -278,7 +317,10 @@ export default function TherapistConsole() {
         </div>
 
         {filteredSessions.length === 0 ? (
-          <p className="sub">No sessions found.</p>
+          <div className="empty-state" style={{ padding: 24 }}>
+            <div className="empty-state-icon" style={{ fontSize: 36, opacity: 0.4 }}>🔍</div>
+            <div className="empty-state-desc">No sessions match your filters.</div>
+          </div>
         ) : (
           <div className="table-wrapper">
             <table className="data-table">

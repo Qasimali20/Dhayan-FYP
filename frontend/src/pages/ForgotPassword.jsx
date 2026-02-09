@@ -91,24 +91,64 @@ export default function ForgotPassword() {
     step === STEP.RESET  ? "Choose a new password" :
                            "Password reset successful!";
 
-  return (
-    <div className="container">
-      <div className="header">
-        <div>
-          <div className="h1">DHYAN</div>
-          <div className="sub">Therapy Assistant — {subtitle}</div>
-        </div>
-      </div>
+  // Step indicator
+  const steps = [1, 2, 3, 4];
+  const stepLabels = ["Email", "Verify", "Reset", "Done"];
 
-      <div className="panel" style={{ maxWidth: 520 }}>
+  return (
+    <div className="auth-wrapper">
+      <div className="auth-card">
+        <div className="auth-brand">
+          <div className="auth-brand-icon" style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 24, fontWeight: 900, color: '#fff',
+          }}>D</div>
+          <div className="auth-brand-name">DHYAN</div>
+          <div className="auth-brand-sub">{subtitle}</div>
+        </div>
+
+        {/* Step indicator */}
+        <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 28 }}>
+          {steps.map((s, i) => (
+            <div key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <div style={{
+                width: 28,
+                height: 28,
+                borderRadius: "50%",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 12,
+                fontWeight: 700,
+                background: step >= s ? "var(--primary)" : "rgba(255,255,255,0.08)",
+                color: step >= s ? "#fff" : "var(--muted)",
+                transition: "all 0.3s ease",
+              }}>
+                {step > s ? "✓" : s}
+              </div>
+              {i < steps.length - 1 && (
+                <div style={{
+                  width: 24,
+                  height: 2,
+                  background: step > s ? "var(--primary)" : "var(--border)",
+                  borderRadius: 2,
+                  transition: "background 0.3s ease",
+                }} />
+              )}
+            </div>
+          ))}
+        </div>
 
         {/* ── Step 1: Email ── */}
         {step === STEP.EMAIL && (
-          <form onSubmit={onRequestOtp}>
-            <div className="form-stack">
+          <form onSubmit={onRequestOtp} className="form-stack">
+            <div className="form-group">
+              <label className="form-label">Email Address</label>
               <input
                 className="input full"
-                placeholder="Email"
+                placeholder="you@example.com"
                 type="email"
                 required
                 value={email}
@@ -116,36 +156,35 @@ export default function ForgotPassword() {
                 autoComplete="email"
               />
             </div>
-            <div className="row" style={{ marginTop: 14 }}>
-              <button className="btn btnPrimary" disabled={loading}>
-                {loading ? "Sending..." : "Send OTP"}
-              </button>
-            </div>
+            <button className="btn btnPrimary btn-lg w-full" disabled={loading}>
+              {loading ? <><span className="spinner spinner-sm" style={{ borderTopColor: "#fff" }} /> Sending...</> : "Send OTP"}
+            </button>
           </form>
         )}
 
         {/* ── Step 2: Verify OTP ── */}
         {step === STEP.OTP && (
-          <form onSubmit={onVerifyOtp}>
-            <div className="form-stack">
+          <form onSubmit={onVerifyOtp} className="form-stack">
+            <div className="form-group">
+              <label className="form-label">Verification Code</label>
               <input
                 className="input full"
-                placeholder="6-digit OTP"
+                placeholder="000000"
                 maxLength={6}
                 required
                 value={otp}
                 onChange={(e) => setOtp(e.target.value)}
                 autoComplete="one-time-code"
-                style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: 22 }}
+                style={{ letterSpacing: "0.4em", textAlign: "center", fontSize: 24, fontWeight: 700 }}
               />
             </div>
-            <div className="row" style={{ marginTop: 14 }}>
-              <button className="btn btnPrimary" disabled={loading}>
-                {loading ? "Verifying..." : "Verify OTP"}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn btnPrimary btn-lg" style={{ flex: 1 }} disabled={loading}>
+                {loading ? <><span className="spinner spinner-sm" style={{ borderTopColor: "#fff" }} /> Verifying...</> : "Verify OTP"}
               </button>
               <button
                 type="button"
-                className="btn"
+                className="btn btn-lg"
                 onClick={() => { setStep(STEP.EMAIL); setOtp(""); setErr(""); setMsg(""); }}
               >
                 Resend
@@ -156,20 +195,24 @@ export default function ForgotPassword() {
 
         {/* ── Step 3: New password ── */}
         {step === STEP.RESET && (
-          <form onSubmit={onResetPassword}>
-            <div className="form-stack">
+          <form onSubmit={onResetPassword} className="form-stack">
+            <div className="form-group">
+              <label className="form-label">New Password</label>
               <input
                 className="input full"
-                placeholder="New Password"
+                placeholder="Create a strong password"
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="new-password"
               />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Confirm Password</label>
               <input
                 className="input full"
-                placeholder="Confirm New Password"
+                placeholder="Re-enter your password"
                 type="password"
                 required
                 value={password2}
@@ -177,29 +220,26 @@ export default function ForgotPassword() {
                 autoComplete="new-password"
               />
             </div>
-            <div className="row" style={{ marginTop: 14 }}>
-              <button className="btn btnPrimary" disabled={loading}>
-                {loading ? "Resetting..." : "Reset Password"}
-              </button>
-            </div>
+            <button className="btn btnPrimary btn-lg w-full" disabled={loading}>
+              {loading ? <><span className="spinner spinner-sm" style={{ borderTopColor: "#fff" }} /> Resetting...</> : "Reset Password"}
+            </button>
           </form>
         )}
 
         {/* ── Step 4: Done ── */}
         {step === STEP.DONE && (
-          <div style={{ textAlign: "center", padding: "20px 0" }}>
-            <div style={{ fontSize: 40, marginBottom: 12 }}>✅</div>
-            <p style={{ color: "#6ee7b7", fontSize: 16, marginBottom: 18 }}>
-              Password reset successfully!
-            </p>
-            <button className="btn btnPrimary" onClick={() => nav("/login")}>
+          <div className="celebration-panel" style={{ padding: "24px 0" }}>
+            <div style={{ fontSize: 42, marginBottom: 8 }}>✅</div>
+            <div className="celebration-title">Password Reset!</div>
+            <div className="celebration-sub">Your password has been updated successfully.</div>
+            <button className="btn btnPrimary btn-lg" onClick={() => nav("/login")}>
               Go to Login
             </button>
           </div>
         )}
 
-        {msg ? <div className="status" style={{ color: "#6ee7b7" }}>{msg}</div> : null}
-        {err ? <div className="status" style={{ color: "#ffb4b4" }}>{err}</div> : null}
+        {msg && <div className="auth-success" style={{ marginTop: 14 }}>{msg}</div>}
+        {err && <div className="auth-error" style={{ marginTop: 14 }}>{err}</div>}
 
         {step !== STEP.DONE && (
           <div className="auth-links">

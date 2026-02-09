@@ -3,6 +3,7 @@ import "./styles/app.css";
 
 import { AuthProvider } from "./hooks/useAuth";
 import { ChildProvider } from "./hooks/useChild";
+import { ToastProvider } from "./hooks/useToast";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 
@@ -18,6 +19,7 @@ import MemoryMatchGame from "./pages/games/MemoryMatchGame";
 import ObjectDiscovery from "./pages/games/ObjectDiscovery";
 import ProblemSolving from "./pages/games/ProblemSolving";
 import SpeechTherapy from "./pages/games/SpeechTherapy";
+import LandingPage from "./pages/LandingPage";
 
 function ProtectedLayout({ children }) {
   return (
@@ -33,8 +35,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ToastProvider>
         <Routes>
           {/* Public routes */}
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -50,10 +54,10 @@ export default function App() {
           <Route path="/games/problem-solving" element={<ProtectedLayout><ProblemSolving /></ProtectedLayout>} />
           <Route path="/speech-therapy" element={<ProtectedLayout><SpeechTherapy /></ProtectedLayout>} />
 
-          {/* Default redirect */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          {/* Catch-all */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   );

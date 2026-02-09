@@ -11,6 +11,9 @@ import {
   scoreSpeechTrial,
   getSpeechSessionSummary,
 } from "../../api/speech";
+import { useToast } from "../../hooks/useToast";
+import ProgressRing from "../../components/ProgressRing";
+import Confetti from "../../components/Confetti";
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -30,11 +33,11 @@ const SEVERITY_COLORS = {
 };
 
 const CATEGORY_ICONS = {
-  repetition: "🗣️",
-  picture_naming: "🖼️",
-  questions: "❓",
-  story_retell: "📖",
-  category_naming: "🧠",
+  repetition: "🗣️ Repeat",
+  picture_naming: "🖼️ Picture",
+  questions: "❓ Q&A",
+  story_retell: "📖 Story",
+  category_naming: "🧠 Category",
 };
 
 // ─── TTS Hook ────────────────────────────────────────────────────────────────
@@ -90,6 +93,7 @@ export default function SpeechTherapy() {
   const { user } = useAuth();
   const { selectedChild, childProfile } = useChild();
   const tts = useTextToSpeech();
+  const toast = useToast();
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
@@ -338,7 +342,7 @@ export default function SpeechTherapy() {
           </button>
           {session && (
             <button className="btn" onClick={handleNewSession}>
-              🔄 Reset
+              Reset
             </button>
           )}
           <button className="btn" onClick={() => nav("/dashboard")}>
@@ -354,7 +358,7 @@ export default function SpeechTherapy() {
           background: "rgba(99,102,241,0.1)", display: "flex", alignItems: "center", gap: 8,
           fontSize: 13,
         }}>
-          <span>👶</span>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }}></span>
           <strong>{childProfile.full_name || childProfile.user?.full_name || `Child #${childProfile.id}`}</strong>
           {session && (
             <>
@@ -368,15 +372,13 @@ export default function SpeechTherapy() {
       )}
 
       {error && (
-        <div className="panel" style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.3)", padding: "10px 16px" }}>
-          <p style={{ color: "#ef4444", margin: 0 }}>⚠️ {error}</p>
-        </div>
+        <div className="alert alert-error" style={{ marginBottom: 12 }}>{error}</div>
       )}
 
       {/* ══════════ SETUP PHASE ══════════ */}
       {phase === "setup" && (
         <div className="panel" style={{ maxWidth: 680 }}>
-          <h3 style={{ margin: "0 0 16px 0" }}>📋 Session Setup</h3>
+          <h3 style={{ margin: "0 0 16px 0" }}>Session Setup</h3>
 
           {!selectedChild && (
             <div style={{
@@ -384,19 +386,19 @@ export default function SpeechTherapy() {
               background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.3)",
               color: "#f59e0b", fontSize: 14,
             }}>
-              ⚠️ Please select a child from the <strong>Games</strong> page first.
+              ⚠ Please select a child from the <strong>Games</strong> page first.
             </div>
           )}
 
           {/* Activity Grid */}
-          <label className="sub" style={{ display: "block", marginBottom: 8 }}>Choose Activity</label>
+          <label className="form-label" style={{ marginBottom: 8 }}>Choose Activity</label>
           <div style={{
             display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
             gap: 8, marginBottom: 16,
           }}>
             {activities.map((a) => {
               const isSelected = String(a.id) === String(selectedActivity);
-              const icon = CATEGORY_ICONS[a.category] || "🎯";
+              const tag = CATEGORY_ICONS[a.category] || a.category;
               return (
                 <div
                   key={a.id}
@@ -408,7 +410,7 @@ export default function SpeechTherapy() {
                     textAlign: "center", transition: "all 0.15s",
                   }}
                 >
-                  <div style={{ fontSize: 26, marginBottom: 4 }}>{icon}</div>
+                  <div style={{ fontSize: 10, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--muted)', marginBottom: 4 }}>{tag}</div>
                   <div style={{ fontSize: 12, fontWeight: 600, lineHeight: 1.3 }}>{a.name}</div>
                   <div style={{ fontSize: 10, opacity: 0.5, marginTop: 2 }}>L{a.difficulty_level}</div>
                 </div>
@@ -418,8 +420,8 @@ export default function SpeechTherapy() {
 
           {/* Settings Row */}
           <div className="row" style={{ gap: 12, marginBottom: 16 }}>
-            <div style={{ flex: 1 }}>
-              <label className="sub" style={{ display: "block", marginBottom: 4 }}>Trials</label>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label className="form-label">Trials</label>
               <input
                 className="input"
                 type="number"
@@ -428,8 +430,8 @@ export default function SpeechTherapy() {
                 onChange={(e) => setTrialsPlanned(Number(e.target.value))}
               />
             </div>
-            <div style={{ flex: 1 }}>
-              <label className="sub" style={{ display: "block", marginBottom: 4 }}>Prompt Level</label>
+            <div className="form-group" style={{ flex: 1 }}>
+              <label className="form-label">Prompt Level</label>
               <select
                 className="input"
                 value={promptLevel}
@@ -449,7 +451,7 @@ export default function SpeechTherapy() {
               marginBottom: 16, borderLeft: "3px solid rgba(99,102,241,0.5)",
             }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
-                <span style={{ fontSize: 22 }}>{CATEGORY_ICONS[currentActivity.category] || "🎯"}</span>
+                <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--primary-light)', padding: '2px 8px', background: 'var(--primary-bg)', borderRadius: 6 }}>{CATEGORY_ICONS[currentActivity.category] || currentActivity.category}</span>
                 <strong>{currentActivity.name}</strong>
               </div>
               <p style={{ margin: "4px 0 0", fontSize: 13, opacity: 0.8, lineHeight: 1.5 }}>
@@ -457,19 +459,19 @@ export default function SpeechTherapy() {
               </p>
               {currentActivity.prompt_levels?.[promptLevel] && (
                 <p style={{ margin: "6px 0 0", fontSize: 12, color: "#818cf8" }}>
-                  📌 {currentActivity.prompt_levels[promptLevel].instruction}
+                  {currentActivity.prompt_levels[promptLevel].instruction}
                 </p>
               )}
             </div>
           )}
 
           <button
-            className="btn btnPrimary"
-            style={{ width: "100%", padding: "14px", fontSize: 16 }}
+            className="btn btnPrimary btn-lg"
+            style={{ width: "100%" }}
             onClick={handleStartSession}
             disabled={loading || !selectedChild || !selectedActivity}
           >
-            {loading ? "Starting..." : "▶ Start Speech Session"}
+            {loading ? (<><span className="spinner" style={{ width: 18, height: 18, marginRight: 8 }}></span> Starting...</>) : "▶ Start Speech Session"}
           </button>
         </div>
       )}
@@ -557,7 +559,7 @@ export default function SpeechTherapy() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 animation: "pulse 1.5s ease-in-out infinite",
               }}>
-                <span style={{ fontSize: 36 }}>🎙️</span>
+                <span style={{ fontSize: 28, color: '#ef4444' }}>🎙️</span>
               </div>
               <div style={{ fontSize: 28, fontWeight: 700, marginBottom: 4 }}>
                 {recordingTime}s
@@ -593,7 +595,7 @@ export default function SpeechTherapy() {
               style={{ flex: 1, background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)" }}
               onClick={() => { setPhase("active"); setAudioBlob(null); setAudioUrl(null); }}
             >
-              🔄 Re-record
+                            🔁 Re-record
             </button>
             <button
               className="btn btnPrimary"
@@ -601,7 +603,7 @@ export default function SpeechTherapy() {
               onClick={handleUploadAndAnalyze}
               disabled={loading}
             >
-              {loading ? "⏳ Analyzing..." : "📤 Upload & Analyze"}
+              {loading ? "Analyzing..." : "📤 Upload & Analyze"}
             </button>
           </div>
         </div>
@@ -622,7 +624,7 @@ export default function SpeechTherapy() {
           </div>
 
           <h3 style={{ marginBottom: 16 }}>
-            📊 Trial {currentTrialIndex + 1} Results
+                        📊 Trial {currentTrialIndex + 1} Results
           </h3>
 
           {audioUrl && (
@@ -632,7 +634,7 @@ export default function SpeechTherapy() {
           {/* Transcript */}
           {analysis?.analysis && (
             <div style={{ marginBottom: 16 }}>
-              <label className="sub" style={{ display: "block", marginBottom: 6 }}>Transcript</label>
+              <label className="form-label" style={{ marginBottom: 6 }}>Transcript</label>
               <div style={{
                 padding: "14px 16px", borderRadius: 10,
                 background: "rgba(255,255,255,0.05)",
@@ -648,7 +650,7 @@ export default function SpeechTherapy() {
                   style={{ marginTop: 6, padding: "4px 12px", fontSize: 12 }}
                   onClick={() => tts.speak(analysis.analysis.transcript_text)}
                 >
-                  🔊 Play Back Transcript
+                                    🔊 Play Back Transcript
                 </button>
               )}
             </div>
@@ -657,7 +659,7 @@ export default function SpeechTherapy() {
           {/* Speech Metrics */}
           {analysis?.analysis?.features_json && (
             <div style={{ marginBottom: 16 }}>
-              <label className="sub" style={{ display: "block", marginBottom: 8 }}>Speech Metrics</label>
+              <label className="form-label" style={{ marginBottom: 8 }}>Speech Metrics</label>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 <MetricCard label="Words" value={analysis.analysis.features_json.word_count || 0} />
                 <MetricCard label="Speech Rate" value={`${Math.round(analysis.analysis.features_json.estimated_speech_rate_wpm || 0)} wpm`} />
@@ -672,7 +674,7 @@ export default function SpeechTherapy() {
           {/* Target Score */}
           {analysis?.analysis?.target_score_json?.keyword_match !== undefined && (
             <div style={{ marginBottom: 16 }}>
-              <label className="sub" style={{ display: "block", marginBottom: 8 }}>Target Match</label>
+              <label className="form-label" style={{ marginBottom: 8 }}>Target Match</label>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
                 <MetricCard
                   label="Keyword Match"
@@ -685,7 +687,7 @@ export default function SpeechTherapy() {
                 />
                 <MetricCard
                   label="Exact Match"
-                  value={analysis.analysis.target_score_json.exact_match ? "✅" : "❌"}
+                  value={analysis.analysis.target_score_json.exact_match ? "Yes" : "No"}
                 />
               </div>
               {analysis.analysis.target_score_json.missing_keywords?.length > 0 && (
@@ -700,7 +702,7 @@ export default function SpeechTherapy() {
           {analysis?.analysis?.feedback_json?.suggestions?.length > 0 && (
             <div style={{ marginBottom: 16 }}>
               <label className="sub" style={{ display: "block", marginBottom: 8 }}>
-                💡 AI Suggestions
+                                AI Suggestions
                 <span style={{
                   marginLeft: 8, padding: "2px 8px", borderRadius: 12, fontSize: 11,
                   background: (SEVERITY_COLORS[analysis.analysis.feedback_json.severity] || "#10b981") + "30",
@@ -718,7 +720,7 @@ export default function SpeechTherapy() {
                   <div style={{ fontSize: 14, fontWeight: 500 }}>{s.message}</div>
                   {s.action && (
                     <div style={{ fontSize: 12, marginTop: 6, opacity: 0.65 }}>
-                      👉 {s.action}
+                                          {s.action}
                     </div>
                   )}
                 </div>
@@ -728,7 +730,7 @@ export default function SpeechTherapy() {
 
           {/* Therapist Scoring */}
           <div style={{ marginTop: 16 }}>
-            <label className="sub" style={{ display: "block", marginBottom: 8 }}>Therapist Score</label>
+            <label className="form-label" style={{ marginBottom: 8 }}>Therapist Score</label>
             <div style={{ display: "flex", gap: 10 }}>
               {[
                 { score: "success", label: "✅ Success", bg: "16,185,129" },
@@ -754,69 +756,90 @@ export default function SpeechTherapy() {
       )}
 
       {/* ══════════ SUMMARY PHASE ══════════ */}
-      {phase === "summary" && summary && (
-        <div className="panel" style={{ maxWidth: 640 }}>
-          <h3 style={{ margin: "0 0 16px 0" }}>📋 Session Summary</h3>
+      {phase === "summary" && summary && (() => {
+        const accPct = Math.round((summary.accuracy || 0) * 100);
+        const isGood = accPct >= 70;
+        const heading = accPct >= 90 ? "Outstanding!" : accPct >= 70 ? "Great Job!" : accPct >= 50 ? "Good Effort!" : "Keep Practicing!";
+        return (
+        <div className="celebration-panel" style={{ maxWidth: 680, margin: "0 auto", animation: "feedbackIn .5s var(--ease-out)" }}>
+          {isGood && <Confetti duration={4000} />}
 
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 20 }}>
-            <MetricCard label="Total Trials" value={summary.total_completed} />
-            <MetricCard label="Correct" value={summary.correct} color="#10b981" />
-            <MetricCard
-              label="Accuracy"
-              value={`${Math.round((summary.accuracy || 0) * 100)}%`}
-              color={summary.accuracy >= 0.7 ? "#10b981" : summary.accuracy >= 0.4 ? "#f59e0b" : "#ef4444"}
+          {/* Celebration Header */}
+          <div style={{ textAlign: "center", marginBottom: 20 }}>
+            <div style={{ fontSize: 42, marginBottom: 8 }}>
+              {accPct >= 90 ? "🏆" : accPct >= 70 ? "🌟" : accPct >= 50 ? "👍" : "💪"}
+            </div>
+            <div style={{ fontSize: 22, fontWeight: 800 }}>{heading}</div>
+            <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 4 }}>Speech Therapy Session Complete</div>
+          </div>
+
+          {/* Accuracy Ring */}
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+            <ProgressRing
+              value={accPct}
+              size={100}
+              strokeWidth={9}
+              color={accPct >= 70 ? "#10b981" : accPct >= 40 ? "#f59e0b" : "#ef4444"}
             />
           </div>
 
-          <div style={{ marginBottom: 16 }}>
-            {summary.trials?.map((t, i) => (
-              <div key={t.trial_id} style={{
-                display: "flex", justifyContent: "space-between", alignItems: "center",
-                padding: "10px 12px", borderRadius: 8, marginBottom: 4,
-                background: "rgba(255,255,255,0.03)",
-              }}>
-                <span style={{ fontWeight: 600, fontSize: 13 }}>Trial {i + 1}</span>
-                <span style={{ fontSize: 12, opacity: 0.6, flex: 1, margin: "0 12px", textAlign: "center" }}>
-                  {t.target_text || "—"}
-                </span>
-                <span style={{ fontSize: 12, opacity: 0.6, flex: 1, textAlign: "center" }}>
-                  {t.transcript || "—"}
-                </span>
-                <span style={{
-                  padding: "3px 12px", borderRadius: 12, fontSize: 12, fontWeight: 500,
-                  background:
-                    t.therapist_score === "success" ? "rgba(16,185,129,0.2)" :
-                    t.therapist_score === "partial" ? "rgba(245,158,11,0.2)" :
-                    "rgba(239,68,68,0.2)",
-                  color:
-                    t.therapist_score === "success" ? "#10b981" :
-                    t.therapist_score === "partial" ? "#f59e0b" :
-                    "#ef4444",
-                }}>
-                  {t.therapist_score || t.status}
-                </span>
-              </div>
-            ))}
+          {/* Stats */}
+          <div className="stats-grid" style={{ marginBottom: 16 }}>
+            <div className="stat-card"><div className="stat-value">{summary.total_completed}</div><div className="stat-label">Trials</div></div>
+            <div className="stat-card stat-card-success"><div className="stat-value">{summary.correct}</div><div className="stat-label">Correct</div></div>
+            <div className="stat-card stat-card-warning"><div className="stat-value">{summary.partial || 0}</div><div className="stat-label">Partial</div></div>
           </div>
 
+          {/* Trial Breakdown Table */}
+          {summary.trials?.length > 0 && (
+            <div className="table-wrapper" style={{ marginBottom: 16 }}>
+              <table className="data-table">
+                <thead>
+                  <tr><th>#</th><th>Target</th><th>Response</th><th>Result</th></tr>
+                </thead>
+                <tbody>
+                  {summary.trials.map((t, i) => (
+                    <tr key={t.trial_id}>
+                      <td style={{ fontWeight: 600 }}>{i + 1}</td>
+                      <td>{t.target_text || "—"}</td>
+                      <td style={{ color: "var(--text-secondary)" }}>{t.transcript || "—"}</td>
+                      <td>
+                        <span className={`accuracy-badge ${
+                          t.therapist_score === "success" ? "acc-high" :
+                          t.therapist_score === "partial" ? "acc-mid" : "acc-low"
+                        }`}>
+                          {t.therapist_score || t.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
           <button
-            className="btn btnPrimary"
-            style={{ width: "100%", padding: "14px", fontSize: 16 }}
+            className="btn btnPrimary btn-lg"
+            style={{ width: "100%" }}
             onClick={handleNewSession}
           >
             🔄 Start New Session
           </button>
         </div>
-      )}
+        );
+      })()}
 
       {/* Analysis Loading Indicator */}
       {analysisPolling && (
         <div style={{
-          position: "fixed", bottom: 20, right: 20, padding: "12px 20px",
-          background: "rgba(99,102,241,0.95)", borderRadius: 12, color: "#fff",
-          fontSize: 14, fontWeight: 500, boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+          position: "fixed", bottom: 24, right: 24, padding: "14px 22px",
+          background: "var(--primary)", borderRadius: "var(--radius-lg)", color: "#fff",
+          fontSize: 14, fontWeight: 600, boxShadow: "var(--shadow-lg)",
+          display: "flex", alignItems: "center", gap: 10,
+          animation: "toastIn .3s var(--ease-out)",
         }}>
-          ⏳ Analyzing speech...
+          <span className="spinner" style={{ width: 16, height: 16 }}></span>
+          Analyzing speech...
         </div>
       )}
     </div>
@@ -825,14 +848,11 @@ export default function SpeechTherapy() {
 
 function MetricCard({ label, value, color }) {
   return (
-    <div style={{
-      padding: 12, borderRadius: 10, textAlign: "center",
-      background: "rgba(255,255,255,0.04)",
-    }}>
-      <div style={{ fontSize: 22, fontWeight: 700, color: color || "#e2e8f0" }}>
+    <div className="stat-card" style={{ padding: "10px 8px" }}>
+      <div className="stat-value" style={{ fontSize: 18, color: color || undefined }}>
         {value}
       </div>
-      <div style={{ fontSize: 11, opacity: 0.55, marginTop: 2 }}>{label}</div>
+      <div className="stat-label">{label}</div>
     </div>
   );
 }

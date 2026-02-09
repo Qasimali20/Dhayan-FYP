@@ -107,7 +107,7 @@ export default function JaGame() {
     // Browsers require a user gesture to unlock audio.
     // WebSpeech typically works after a click; we still do a safe call.
     setVoiceEnabled(true);
-    setStatusText("🔊 Voice enabled.");
+    setStatusText("Voice enabled.");
     if (trial?.tts_text || trial?.prompt) speakText(trial.tts_text || trial.prompt);
   }
 
@@ -159,7 +159,7 @@ export default function JaGame() {
       if (res?.summary) {
         setCompleted(true);
         setSummary(res.summary);
-        setStatusText("✅ Session completed. Summary below.");
+        setStatusText("Session completed. Summary below.");
         return;
       }
 
@@ -169,7 +169,7 @@ export default function JaGame() {
         const s = ft.summary ? ft.summary : await apiSummary(sid);
         setCompleted(true);
         setSummary(s);
-        setStatusText("✅ Session completed. Summary below.");
+        setStatusText("Session completed. Summary below.");
         return;
       }
 
@@ -189,9 +189,9 @@ export default function JaGame() {
         tts_text: ft.tts_text,
       });
       trialStartRef.current = performance.now();
-      setStatusText(`✅ Session started: ${sid}`);
+      setStatusText(`Session started: ${sid}`);
     } catch (e) {
-      setStatusText(`❌ ${e.message}`);
+      setStatusText(`Error: ${e.message}`);
     }
   }
 
@@ -209,7 +209,7 @@ export default function JaGame() {
         setTrial(null);
         setTrialId(null);
         setSummary(s);
-        setStatusText("✅ Session completed. Summary below.");
+        setStatusText("Session completed. Summary below.");
         return;
       }
 
@@ -233,7 +233,7 @@ export default function JaGame() {
       trialStartRef.current = performance.now();
       setStatusText("");
     } catch (e) {
-      setStatusText(`❌ ${e.message}`);
+      setStatusText(`Error: ${e.message}`);
     }
   }
 
@@ -253,7 +253,7 @@ export default function JaGame() {
     try {
       const resp = await apiSubmitTrial(trialId, clicked, rt, timedOut);
 
-      const ok = resp.success ? "✅ Correct" : "❌ Wrong";
+      const ok = resp.success ? "Correct" : "Wrong";
       const last = `${ok} | RT=${rt}ms | Clicked=${clicked}${
         trial?.target ? ` | Target=${trial.target}` : ""
       }`;
@@ -275,7 +275,7 @@ export default function JaGame() {
       setStatusText(last);
       setTimeout(() => loadNext(), 250);
     } catch (e) {
-      setStatusText(`❌ ${e.message}`);
+      setStatusText(`Error: ${e.message}`);
     } finally {
       setSubmitting(false);
     }
@@ -292,7 +292,7 @@ export default function JaGame() {
       setSummary(s);
       setStatusText("Showing summary...");
     } catch (e) {
-      setStatusText(`❌ ${e.message}`);
+      setStatusText(`Error: ${e.message}`);
     }
   }
 
@@ -300,14 +300,14 @@ export default function JaGame() {
     if (completed) return "Session completed.";
     if (trial?.prompt) return trial.prompt;
     if (sessionId) return "Loading…";
-    return "Enter Child ID and press Start.";
+    // return "Enter Child ID and press Start.";
   }, [completed, trial, sessionId]);
 
   return (
     <div className="container">
       <div className="header">
         <div>
-          <div className="h1">Look Where I Point</div>
+          {/* <div className="h1">Look Where I Point</div> */}
           <div className="sub">Joint Attention • AI-assisted session</div>
         </div>
 
@@ -317,12 +317,12 @@ export default function JaGame() {
           </button>
 
           <button className="btn" onClick={voiceEnabled ? () => speakText(trial?.tts_text || trial?.prompt) : enableVoice} disabled={completed}>
-            {voiceEnabled ? "🔊 Speak" : "Enable Voice"}
+            {voiceEnabled ? "🔊 Speak" : "🔇 Enable Voice"}
           </button>
 
-          <button className="btn" onClick={logout}>
+          {/* <button className="btn" onClick={logout}>
             Logout
-          </button>
+          </button> */}
         </div>
       </div>
 
@@ -331,7 +331,7 @@ export default function JaGame() {
         <div className="row" style={{ marginBottom: 12 }}>
           {!childId && (
             <div style={{ color: "#f59e0b", fontSize: 13 }}>
-              ⚠️ Select a child on the Games page first
+                            Select a child on the Games page first
             </div>
           )}
         </div>

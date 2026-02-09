@@ -6,9 +6,9 @@ export default function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div className="container" style={{ textAlign: "center", padding: "80px 0" }}>
-        <div className="h1">Loading...</div>
-        <p className="sub">Authenticating your session</p>
+      <div className="container" style={{ textAlign: "center", padding: "120px 0" }}>
+        <div className="spinner" style={{ width: 36, height: 36, margin: "0 auto 16px" }}></div>
+        <div style={{ fontSize: 15, color: "var(--text-secondary)" }}>Authenticating...</div>
       </div>
     );
   }

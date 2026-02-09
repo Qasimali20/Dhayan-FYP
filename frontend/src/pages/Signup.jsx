@@ -50,62 +50,85 @@ export default function Signup() {
   }
 
   return (
-    <div className="container">
-      <div className="header">
-        <div>
-          <div className="h1">DHYAN</div>
-          <div className="sub">Therapy Assistant — Create Account</div>
+    <div className="auth-wrapper">
+      <div className="auth-card">
+        <div className="auth-brand">
+          <div className="auth-brand-icon" style={{
+            width: 48, height: 48, borderRadius: 12,
+            background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 24, fontWeight: 900, color: '#fff',
+          }}>D</div>
+          <div className="auth-brand-name">DHYAN</div>
+          <div className="auth-brand-sub">Create your account</div>
         </div>
-      </div>
 
-      <div className="panel" style={{ maxWidth: 520 }}>
-        <form onSubmit={onSubmit}>
-          <div className="form-stack">
+        <form onSubmit={onSubmit} className="form-stack">
+          <div className="form-group">
+            <label className="form-label">Email</label>
             <input
               className="input full"
-              placeholder="Email"
+              placeholder="you@example.com"
               type="email"
               required
               value={form.email}
               onChange={set("email")}
               autoComplete="email"
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Full Name</label>
             <input
               className="input full"
-              placeholder="Full Name"
+              placeholder="Enter your full name"
               value={form.full_name}
               onChange={set("full_name")}
               autoComplete="name"
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Phone (optional)</label>
             <input
               className="input full"
-              placeholder="Phone (optional)"
+              placeholder="+1 (555) 123-4567"
               value={form.phone}
               onChange={set("phone")}
               autoComplete="tel"
             />
+          </div>
 
+          <div className="form-group">
+            <label className="form-label">I am a...</label>
             <select
               className="input full"
               value={form.role}
               onChange={set("role")}
             >
-              <option value="parent">Parent</option>
-              <option value="therapist">Therapist</option>
+              <option value="parent">Parent / Guardian</option>
+              <option value="therapist">Therapist / Clinician</option>
             </select>
+          </div>
 
+          <div className="form-group">
+            <label className="form-label">Password</label>
             <input
               className="input full"
-              placeholder="Password"
+              placeholder="Create a strong password"
               type="password"
               required
               value={form.password}
               onChange={set("password")}
               autoComplete="new-password"
             />
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Confirm Password</label>
             <input
               className="input full"
-              placeholder="Confirm Password"
+              placeholder="Re-enter your password"
               type="password"
               required
               value={form.password2}
@@ -114,15 +137,15 @@ export default function Signup() {
             />
           </div>
 
-          <div className="row" style={{ marginTop: 14 }}>
-            <button className="btn btnPrimary" disabled={loading}>
-              {loading ? "Creating account..." : "Sign Up"}
-            </button>
-          </div>
+          {err && <div className="auth-error">{err}</div>}
 
-          {err ? (
-            <div className="status" style={{ color: "#ffb4b4" }}>{err}</div>
-          ) : null}
+          <button className="btn btnPrimary btn-lg w-full" disabled={loading} style={{ marginTop: 8 }}>
+            {loading ? (
+              <><span className="spinner spinner-sm" style={{ borderTopColor: "#fff" }} /> Creating account...</>
+            ) : (
+              "Create Account"
+            )}
+          </button>
 
           <div className="auth-links">
             <Link to="/login">Already have an account? Sign in</Link>

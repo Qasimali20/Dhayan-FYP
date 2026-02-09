@@ -104,7 +104,7 @@ export function ChildSelector({ style = {} }) {
   return (
     <div style={{ ...style }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontSize: 13, opacity: 0.7, whiteSpace: "nowrap" }}>👶 Child:</span>
+        <span style={{ fontSize: 13, opacity: 0.7, whiteSpace: "nowrap" }}>Child:</span>
         <select
           className="input"
           value={selectedChild}
@@ -124,7 +124,7 @@ export function ChildSelector({ style = {} }) {
           onClick={() => setShowAdd(!showAdd)}
           title="Add a new child"
         >
-          ➕
+          +
         </button>
       </div>
 
