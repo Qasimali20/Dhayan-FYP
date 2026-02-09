@@ -53,3 +53,12 @@ export async function resetPassword(email, otp, new_password, new_password2) {
     auth: false,
   });
 }
+
+// ── Profile Update ──
+
+export async function updateProfile({ full_name, phone }) {
+  return apiFetch("/api/v1/auth/me", {
+    method: "PATCH",
+    body: { full_name, phone },
+  });
+}

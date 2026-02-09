@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { to: "/therapist", label: "Console" },
   { to: "/games", label: "Games" },
   { to: "/speech-therapy", label: "Speech Therapy" },
+  { to: "/profile", label: "Profile" },
 ];
 
 export default function Layout({ children }) {
@@ -62,7 +63,9 @@ export default function Layout({ children }) {
           </div>
 
           <div className="nav-user">
-            <span className="nav-user-name">{displayName}</span>
+            <NavLink to="/profile" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <span className="nav-user-name" style={{ cursor: 'pointer' }}>{displayName}</span>
+            </NavLink>
             {roles.length > 0 && (
               <span className="badge">{roles[0]}</span>
             )}

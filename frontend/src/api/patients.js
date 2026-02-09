@@ -13,3 +13,11 @@ export function createChild({ email, full_name, date_of_birth, gender, diagnosis
   if (diagnosis_notes) body.diagnosis_notes = diagnosis_notes;
   return apiFetch(`${BASE}/children`, { method: "POST", body });
 }
+
+export function updateChild(childId, data) {
+  return apiFetch(`${BASE}/children/${childId}`, { method: "PATCH", body: data });
+}
+
+export function deleteChild(childId) {
+  return apiFetch(`${BASE}/children/${childId}`, { method: "DELETE" });
+}

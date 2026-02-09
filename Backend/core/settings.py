@@ -53,8 +53,9 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",  # ✅ must be at the top
+    "corsheaders.middleware.CorsMiddleware", 
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",  
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -141,6 +142,7 @@ USE_TZ = True
 # -----------------------------------------------------------------------------
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -174,10 +176,7 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# -----------------------------------------------------------------------------
-# CORS (frontend/mobile)
-# -----------------------------------------------------------------------------
-# When using ngrok (dynamic URLs), set CORS_ALLOW_ALL=1 in .env
+
 if os.getenv("CORS_ALLOW_ALL", "0") == "1":
     CORS_ALLOW_ALL_ORIGINS = True
 else:
@@ -185,11 +184,22 @@ else:
         o.strip()
         for o in os.getenv(
             "CORS_ALLOWED_ORIGINS",
-            "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174",
+            "http://localhost:5173,http://127.0.0.1:5173",
         ).split(",")
         if o.strip()
     ]
 CORS_ALLOW_CREDENTIALS = True
+
+# Allow the custom ngrok header through CORS preflight
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "authorization",
+    "content-type",
+    "origin",
+    "user-agent",
+    "x-requested-with",
+    "ngrok-skip-browser-warning",
+]
 
 # Trusted origins for CSRF (needed for ngrok / Vercel)
 CSRF_TRUSTED_ORIGINS = [

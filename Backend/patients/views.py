@@ -68,11 +68,29 @@ class ChildDetailView(APIView):
         profile = self.get_object(child_id)
         self.check_object_permissions(request, profile)
 
+        # Allow updating full_name (lives on User, not ChildProfile)
+        full_name = request.data.get("full_name")
+        if full_name is not None:
+            profile.user.full_name = full_name
+            profile.user.save(update_fields=["full_name"])
+
         ser = ChildUpdateSerializer(profile, data=request.data, partial=True)
         ser.is_valid(raise_exception=True)
         profile = ser.save()
 
         return Response(ChildProfileSerializer(profile).data)
+
+    def delete(self, request, child_id: int):
+        profile = self.get_object(child_id)
+        self.check_object_permissions(request, profile)
+
+        # Remove therapist assignment, then delete profile + user
+        TherapistChildAssignment.objects.filter(child_user=profile.user).delete()
+        user = profile.user
+        profile.delete()
+        user.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class AdminAssignTherapistView(APIView):

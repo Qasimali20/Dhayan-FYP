@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../hooks/useAuth";
-import { listChildren, createChild } from "../api/patients";
+import { listChildren, createChild, updateChild, deleteChild } from "../api/patients";
 import { getSessionHistory, getChildProgress } from "../api/games";
 import { SkeletonStatCards, SkeletonTable } from "../components/Skeleton";
 import ProgressRing from "../components/ProgressRing";
@@ -24,6 +24,15 @@ export default function TherapistConsole() {
   });
   const [addError, setAddError] = useState("");
   const [addLoading, setAddLoading] = useState(false);
+
+  // Edit child state
+  const [editingChild, setEditingChild] = useState(null); // child id being edited
+  const [editForm, setEditForm] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
+
+  // Delete confirm state
+  const [deletingChild, setDeletingChild] = useState(null); // child id pending delete
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   // Session filters
   const [statusFilter, setStatusFilter] = useState("");
@@ -73,6 +82,62 @@ export default function TherapistConsole() {
       toast.error(msg);
     } finally {
       setAddLoading(false);
+    }
+  }
+
+  // ── Edit child handlers ──
+  function startEditChild(child, e) {
+    e.stopPropagation();
+    setEditingChild(child.id);
+    setEditForm({
+      full_name: child.full_name || "",
+      date_of_birth: child.date_of_birth || "",
+      gender: child.gender || "unknown",
+      diagnosis_notes: child.diagnosis_notes || "",
+    });
+  }
+
+  function cancelEditChild() {
+    setEditingChild(null);
+    setEditForm({});
+  }
+
+  async function handleEditChild(e) {
+    e.preventDefault();
+    setEditLoading(true);
+    try {
+      await updateChild(editingChild, editForm);
+      toast.success("Child updated successfully!");
+      setEditingChild(null);
+      loadData();
+    } catch (err) {
+      toast.error(err.message || "Failed to update child");
+    } finally {
+      setEditLoading(false);
+    }
+  }
+
+  // ── Delete child handlers ──
+  function startDeleteChild(child, e) {
+    e.stopPropagation();
+    setDeletingChild(child);
+  }
+
+  async function confirmDeleteChild() {
+    setDeleteLoading(true);
+    try {
+      await deleteChild(deletingChild.id);
+      toast.success("Child removed successfully");
+      setDeletingChild(null);
+      if (selectedChild === deletingChild.id) {
+        setSelectedChild(null);
+        setChildProgress(null);
+      }
+      loadData();
+    } catch (err) {
+      toast.error(err.message || "Failed to delete child");
+    } finally {
+      setDeleteLoading(false);
     }
   }
 
@@ -187,29 +252,133 @@ export default function TherapistConsole() {
         ) : (
           <div className="children-grid">
             {children.map((c) => (
-              <div
-                key={c.id}
-                className={`child-card ${selectedChild === c.id ? "child-card-active" : ""}`}
-                onClick={() => setSelectedChild(selectedChild === c.id ? null : c.id)}
-              >
-                <div className="child-avatar" style={{ fontSize: 16, fontWeight: 800, color: 'var(--primary-light)' }}>
-                  {(c.full_name || c.email || '?').charAt(0).toUpperCase()}
-                </div>
-                <div className="child-info">
-                  <div className="child-name">{c.full_name || c.email}</div>
-                  <div className="child-meta">
-                    {c.date_of_birth && <span>DOB: {c.date_of_birth}</span>}
-                    {c.gender && c.gender !== "unknown" && <span> · {c.gender}</span>}
+              <div key={c.id}>
+                {/* ── Edit Form (inline) ── */}
+                {editingChild === c.id ? (
+                  <div className="child-card" style={{ flexDirection: "column", alignItems: "stretch", gap: 10, padding: 16 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                      <span style={{ fontWeight: 700, fontSize: 14 }}>Edit Child</span>
+                      <button className="btn btn-sm" onClick={cancelEditChild} style={{ padding: "4px 10px" }}>✕</button>
+                    </div>
+                    <form onSubmit={handleEditChild} className="form-stack" style={{ gap: 10 }}>
+                      <div className="form-group">
+                        <label className="form-label">Full Name</label>
+                        <input className="input full" value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} />
+                      </div>
+                      <div className="form-row" style={{ gap: 8 }}>
+                        <div className="form-group" style={{ flex: 1, minWidth: 0 }}>
+                          <label className="form-label">DOB</label>
+                          <input className="input full" type="date" value={editForm.date_of_birth} onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })} />
+                        </div>
+                        <div className="form-group" style={{ flex: 1, minWidth: 0 }}>
+                          <label className="form-label">Gender</label>
+                          <select className="input full" value={editForm.gender} onChange={(e) => setEditForm({ ...editForm, gender: e.target.value })}>
+                            <option value="unknown">Unknown</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Diagnosis Notes</label>
+                        <textarea className="input full" value={editForm.diagnosis_notes} onChange={(e) => setEditForm({ ...editForm, diagnosis_notes: e.target.value })} rows={2} />
+                      </div>
+                      <div style={{ display: "flex", gap: 8 }}>
+                        <button className="btn btnPrimary btn-sm" disabled={editLoading} style={{ flex: 1 }}>
+                          {editLoading ? "Saving..." : "Save"}
+                        </button>
+                        <button type="button" className="btn btn-sm" onClick={cancelEditChild} style={{ flex: 1 }}>
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
                   </div>
-                  {c.diagnosis_notes && (
-                    <div className="child-diagnosis">{c.diagnosis_notes}</div>
-                  )}
-                </div>
+                ) : (
+                  /* ── Normal Child Card ── */
+                  <div
+                    className={`child-card ${selectedChild === c.id ? "child-card-active" : ""}`}
+                    onClick={() => setSelectedChild(selectedChild === c.id ? null : c.id)}
+                  >
+                    <div className="child-avatar" style={{ fontSize: 16, fontWeight: 800, color: 'var(--primary-light)' }}>
+                      {(c.full_name || c.email || '?').charAt(0).toUpperCase()}
+                    </div>
+                    <div className="child-info" style={{ flex: 1 }}>
+                      <div className="child-name">{c.full_name || c.email}</div>
+                      <div className="child-meta">
+                        {c.date_of_birth && <span>DOB: {c.date_of_birth}</span>}
+                        {c.gender && c.gender !== "unknown" && <span> · {c.gender}</span>}
+                      </div>
+                      {c.diagnosis_notes && (
+                        <div className="child-diagnosis">{c.diagnosis_notes}</div>
+                      )}
+                    </div>
+                    {/* Action Buttons */}
+                    <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
+                      <button
+                        className="btn btn-sm"
+                        title="Edit child"
+                        onClick={(e) => startEditChild(c, e)}
+                        style={{ padding: "5px 8px", fontSize: 13 }}
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className="btn btn-sm"
+                        title="Delete child"
+                        onClick={(e) => startDeleteChild(c, e)}
+                        style={{ padding: "5px 8px", fontSize: 13, color: "var(--danger)" }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         )}
       </div>
+
+      {/* ── Delete Confirmation Modal ── */}
+      {deletingChild && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 200,
+          background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          animation: "feedbackIn 0.2s var(--ease-out)",
+        }} onClick={() => !deleteLoading && setDeletingChild(null)}>
+          <div className="panel" style={{
+            maxWidth: 400, width: "90%", padding: 28, textAlign: "center",
+            animation: "feedbackIn 0.3s var(--ease-spring)",
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>⚠️</div>
+            <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>Delete Child?</div>
+            <div style={{ color: "var(--text-secondary)", fontSize: 14, marginBottom: 20, lineHeight: 1.5 }}>
+              Are you sure you want to remove <strong>{deletingChild.full_name || deletingChild.email}</strong>?
+              This will permanently delete their profile and all associated data.
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+              <button
+                className="btn"
+                onClick={() => setDeletingChild(null)}
+                disabled={deleteLoading}
+                style={{ flex: 1 }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn btnDanger"
+                onClick={confirmDeleteChild}
+                disabled={deleteLoading}
+                style={{ flex: 1, background: "var(--danger)", borderColor: "transparent", color: "#fff" }}
+              >
+                {deleteLoading ? "Deleting..." : "Delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Child Progress Panel */}
       {childProgress && (
