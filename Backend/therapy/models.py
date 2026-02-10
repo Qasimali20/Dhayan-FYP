@@ -125,3 +125,64 @@ class Observation(models.Model):
 
     def __str__(self) -> str:
         return f"Obs({self.id}) session={self.session_id} trial={self.trial_id}"
+
+
+class ScenarioImage(models.Model):
+    """
+    A scenario image/video used in the Scene Description game.
+    Stores the image, expected description, and metadata for adaptive difficulty.
+    """
+    id = models.BigAutoField(primary_key=True)
+
+    # Scenario details
+    title = models.CharField(max_length=200)
+    image = models.ImageField(upload_to="scenarios/")  # or VideoField for videos
+    expected_description = models.TextField(help_text="Expected key elements child should describe")
+
+    # Difficulty level (1-3)
+    level = models.IntegerField(default=1, choices=[(1, "Easy"), (2, "Medium"), (3, "Hard")])
+
+    # Key elements to look for (JSON list)
+    key_elements = models.JSONField(default=list, blank=True, help_text="List of key things to describe")
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["level"]),
+            models.Index(fields=["is_active"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"Scenario({self.id}) {self.title} (Level {self.level})"
+
+
+class SceneDescriptionResponse(models.Model):
+    """
+    Tracks a child's response to a scenario image in the Scene Description game.
+    """
+    id = models.BigAutoField(primary_key=True)
+
+    trial = models.ForeignKey(SessionTrial, on_delete=models.CASCADE, related_name="scene_responses")
+    scenario = models.ForeignKey(ScenarioImage, on_delete=models.PROTECT, related_name="responses")
+
+    child_response = models.TextField(help_text="Child's description of the scenario")
+
+    # LLM Evaluation Results
+    llm_feedback = models.TextField(blank=True, default="", help_text="Detailed feedback from LLM")
+    llm_score = models.IntegerField(null=True, blank=True, help_text="0-100 score from LLM")
+    key_elements_found = models.JSONField(default=list, blank=True, help_text="Which key elements were mentioned")
+    clarity_score = models.IntegerField(null=True, blank=True, help_text="0-10 clarity/coherence")
+    completeness_score = models.IntegerField(null=True, blank=True, help_text="0-10 how complete the description is")
+
+    created_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["trial"]),
+            models.Index(fields=["scenario"]),
+        ]
+
+    def __str__(self) -> str:
+        return f"Response({self.id}) trial={self.trial_id} score={self.llm_score}"

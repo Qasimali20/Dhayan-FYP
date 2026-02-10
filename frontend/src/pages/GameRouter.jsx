@@ -53,6 +53,16 @@ const GAMES = [
     border: "rgba(239, 68, 68, 0.4)",
     skills: ["Pattern Logic", "Sequencing", "Executive Function"],
   },
+  {
+    code: "scene_description",
+    path: "/games/scene-description",
+    name: "Scene Description",
+    icon: "🖼️",
+    description: "Describe images and scenarios. Builds descriptive language and expressive communication skills.",
+    color: "rgba(147, 51, 234, 0.25)",
+    border: "rgba(147, 51, 234, 0.4)",
+    skills: ["Expressive Language", "Vocabulary", "Communication"],
+  },
 ];
 
 export default function GameRouter() {

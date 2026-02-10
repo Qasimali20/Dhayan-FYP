@@ -7,3 +7,5 @@ djangorestframework-simplejwt==5.3.1
 django-cors-headers
 gtts==2.3.2
 whitenoise==6.7.0
+groq==0.4.2
+Pillow==10.1.0

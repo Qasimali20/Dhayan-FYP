@@ -85,13 +85,12 @@ class GameSubmitTrialView(APIView):
         ser.is_valid(raise_exception=True)
         data = ser.validated_data
 
+        # Pass all validated data (including extra fields) to engine
         out = engine.submit_trial(
             game_code=game_code,
             user=request.user,
             trial_id=int(trial_id),
-            clicked=str(data["clicked"]),
-            response_time_ms=int(data["response_time_ms"]),
-            timed_out=bool(data.get("timed_out", False)),
+            **data
         )
 
         return Response(out)

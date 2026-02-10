@@ -19,6 +19,7 @@ import MemoryMatchGame from "./pages/games/MemoryMatchGame";
 import ObjectDiscovery from "./pages/games/ObjectDiscovery";
 import ProblemSolving from "./pages/games/ProblemSolving";
 import SpeechTherapy from "./pages/games/SpeechTherapy";
+import SceneDescriptionGame from "./pages/games/SceneDescriptionGame";
 import LandingPage from "./pages/LandingPage";
 import ProfilePage from "./pages/ProfilePage";
 
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="/games/memory-match" element={<ProtectedLayout><MemoryMatchGame /></ProtectedLayout>} />
           <Route path="/games/object-discovery" element={<ProtectedLayout><ObjectDiscovery /></ProtectedLayout>} />
           <Route path="/games/problem-solving" element={<ProtectedLayout><ProblemSolving /></ProtectedLayout>} />
+          <Route path="/games/scene-description" element={<ProtectedLayout><SceneDescriptionGame /></ProtectedLayout>} />
           <Route path="/speech-therapy" element={<ProtectedLayout><SpeechTherapy /></ProtectedLayout>} />
           <Route path="/profile" element={<ProtectedLayout><ProfilePage /></ProtectedLayout>} />
 

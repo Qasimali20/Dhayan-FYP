@@ -156,21 +156,23 @@ def next_trial(*, game_code: str, user, session_id: int) -> dict:
         },
     )
 
-    return {
-        "trial_id": trial.id,
-        "game": game_code,
-        "trial_type": game.trial_type,
-        "level": level,
-        "prompt": prompt,
-        "prompt_audio": prompt_audio,
-        "highlight": highlight,
-        "options": spec.get("options", []),
-        "target": target,  # MVP debug; remove later
-        "time_limit_ms": int(spec.get("time_limit_ms", 10000)),
-        "ai_hint": spec.get("ai_hint"),
-        "ai_reason": spec.get("ai_reason"),
-        "extra": spec.get("extra", {}),
-    }
+    # Merge plugin spec and always include trial.id as 'id'
+    trial_dict = dict(spec)
+    trial_dict["id"] = trial.id
+    trial_dict["trial_id"] = trial.id  # for backward compatibility
+    trial_dict["game"] = game_code
+    trial_dict["trial_type"] = game.trial_type
+    trial_dict["level"] = level
+    trial_dict["prompt"] = prompt
+    trial_dict["prompt_audio"] = prompt_audio
+    trial_dict["highlight"] = highlight
+    trial_dict["options"] = spec.get("options", [])
+    trial_dict["target"] = target
+    trial_dict["time_limit_ms"] = int(spec.get("time_limit_ms", 10000))
+    trial_dict["ai_hint"] = spec.get("ai_hint")
+    trial_dict["ai_reason"] = spec.get("ai_reason")
+    trial_dict["extra"] = spec.get("extra", {})
+    return trial_dict
 
 
 def submit_trial(
@@ -178,19 +180,14 @@ def submit_trial(
     game_code: str,
     user,
     trial_id: int,
-    clicked: str,
-    response_time_ms: int,
-    timed_out: bool = False,
+    **submit_data,
 ) -> dict:
     game = _as_game_instance(get_game(game_code))
 
-    trial = (
-        SessionTrial.objects.filter(id=trial_id)
-        .select_related("session", "session__therapist")
-        .first()
-    )
+    trial = SessionTrial.objects.filter(id=trial_id).first()
     if not trial:
         raise NotFound("Trial not found")
+        trial=trial,
 
     if trial.session.therapist_id != user.id and not getattr(user, "is_superuser", False):
         raise PermissionDenied("Not your trial")
@@ -205,9 +202,10 @@ def submit_trial(
     target = started.tags.get("target") or ""
     level = int(started.tags.get("level") or 1)
 
+    # Pass all submit_data to plugin
     result = game.evaluate(
         target=target,
-        submit={"clicked": clicked, "response_time_ms": response_time_ms, "timed_out": timed_out},
+        submit=submit_data,
         level=level,
         session_id=trial.session_id,
     )
@@ -246,7 +244,7 @@ def submit_trial(
         session_completed = True
         session_summary = summary(game_code=game_code, user=user, session_id=session_id)
 
-    return {
+    response = {
         "trial_id": trial.id,
         "success": success,
         "score": score,
@@ -256,6 +254,11 @@ def submit_trial(
         "session_completed": session_completed,
         "summary": session_summary,
     }
+    # Merge all extra fields from result (without overwriting above keys)
+    for k, v in result.items():
+        if k not in response:
+            response[k] = v
+    return response
 
 
 def summary(*, game_code: str, user, session_id: int) -> dict:

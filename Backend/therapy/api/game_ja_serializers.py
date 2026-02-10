@@ -19,6 +19,15 @@ class SubmitTrialSerializer(serializers.Serializer):
     response_time_ms = serializers.IntegerField(required=True, min_value=0, max_value=600000)
     timed_out = serializers.BooleanField(required=False, default=False)
 
+    # Accept extra fields for scene_description game
+    def to_internal_value(self, data):
+        ret = super().to_internal_value(data)
+        # Pass through extra fields
+        for k, v in data.items():
+            if k not in ret:
+                ret[k] = v
+        return ret
+
 
 class SummarySerializer(serializers.Serializer):
     session_id = serializers.IntegerField()
